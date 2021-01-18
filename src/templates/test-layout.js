@@ -44,6 +44,7 @@ export const pageQuery = graphql`
         slug
         pageType
         title
+        mainImage
       }
       excerpt
       tableOfContents

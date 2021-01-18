@@ -25,6 +25,11 @@ exports.onCreateNode = ({ node, getNode, actions }) => {
       name: `title`,
       value: node.frontmatter.title || fileNode.name || "no title",
     })
+    createNodeField({
+      node,
+      name: `mainImage`,
+      value: node.frontmatter.mainImage || "/gatsby.jpg",
+    })
   }
 }
 
