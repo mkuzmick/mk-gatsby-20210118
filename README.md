@@ -1,99 +1,336 @@
-<!-- AUTO-GENERATED-CONTENT:START (STARTER) -->
-<p align="center">
-  <a href="https://www.gatsbyjs.com">
-    <img alt="Gatsby" src="https://www.gatsbyjs.com/Gatsby-Monogram.svg" width="60" />
-  </a>
-</p>
-<h1 align="center">
-  Gatsby's default starter
-</h1>
+# MK GATSBY 20210118
 
-Kick off your project with this default boilerplate. This starter ships with the main Gatsby configuration files you might need to get up and running blazing fast with the blazing fast app generator for React.
+Just another daily mk gatsby project. What's new today?
 
-_Have another more specific idea? You may want to check out our vibrant collection of [official and community-created starters](https://www.gatsbyjs.com/docs/gatsby-starters/)._
+- improved MDX providers
+- Airtable connections
+- style
 
-## 🚀 Quick start
+## THE STEPS
 
-1.  **Create a Gatsby site.**
+to make this project.
 
-    Use the Gatsby CLI to create a new site, specifying the default starter.
+### STARTING UP A GATSBY PROJECT
 
-    ```shell
-    # create a new Gatsby site using the default starter
-    gatsby new my-default-starter https://github.com/gatsbyjs/gatsby-starter-default
-    ```
+There are many ways to get going. Here is a simple script we've been using in January 2021:
 
-1.  **Start developing.**
+```
+#! /usr/bin/env zsh
 
-    Navigate into your new site’s directory and start it up.
+PROJECT_NAME=$1
+gatsby new $PROJECT_NAME $2
+DATA_STRING="{\"name\":\"$PROJECT_NAME\",\"private\":false}"
+curl -u "mkuzmick:$GITHUB_TOKEN" https://api.github.com/user/repos -d $DATA_STRING
+code $PROJECT_NAME
+cd $PROJECT_NAME
+git remote add origin "https://github.com/mkuzmick/$PROJECT_NAME.git"
+git branch -M main
+git push -u origin main
+open -a "Firefox Developer Edition" "http://localhost:8000"
+open -a "Firefox Developer Edition" "http://localhost:8000/___graphql"
+gatsby develop
+```
 
-    ```shell
-    cd my-default-starter/
-    gatsby develop
-    ```
+- it should be running. If you want, host it on Netlify by signing in with Github and connecting a new site to your new Github repo.
+- also don't forget to add new metadata to `gatsby-config.js`:
+  ```
+  siteMetadata: {
+      title: `MK Gatsby`,
+      description: `Another daily Gatsby project.`,
+      author: `mk`,
+    },
+  ```
 
-1.  **Open the source code and start editing!**
+### INSTALL MDX PLUGIN
 
-    Your site is now running at `http://localhost:8000`!
+One option is to JUST install the mdx plugin and have it handle both `.md` and `.mdx` files.
 
-    _Note: You'll also see a second link: _`http://localhost:8000/___graphql`_. This is a tool you can use to experiment with querying your data. Learn more about using this tool in the [Gatsby tutorial](https://www.gatsbyjs.com/tutorial/part-five/#introducing-graphiql)._
+- install the [gatsby-plugin-mdx](https://www.gatsbyjs.com/plugins/gatsby-plugin-mdx/?=mdx) and [gatsby-remark-images](https://www.gatsbyjs.com/plugins/gatsby-remark-images/?=remark%20images) plugins:
+  ```
+  npm install gatsby-remark-images gatsby-plugin-sharp gatsby-plugin-mdx @mdx-js/mdx @mdx-js/react
+  ```
 
-    Open the `my-default-starter` directory in your code editor of choice and edit `src/pages/index.js`. Save your changes and the browser will update in real time!
+* in `gatsby-config.js`, add the `gatsby-remark-images` plugin and the `gatsby-plugin-mdx` (also adding the `gatsby-remark-images` plugin _within_ the `gatsby-plugin-mdx` object too). If you want the `mdx` plugin to handle `.md` file extensions too, add a line to options specifying that:
+  ```
+  `gatsby-remark-images`,
+  {
+    resolve: `gatsby-plugin-mdx`,
+    options: {
+      extensions: [`.mdx`, `.md`],
+      // add default layouts once you have them
+      // defaultLayouts: {
+      //  resources: require.resolve("./src/components/layouts/mdx-layout-resource.js"),
+    //  default: require.resolve("./src/components/layouts/mdx-layout-basic.js"),
+    },
+    gatsbyRemarkPlugins: [
+      {
+        resolve: `gatsby-remark-images`,
+        options: {
+          maxWidth: 960,
+        },
+      },
+    ],
+  },
+  ```
+  We'll get in to layouts in a later step, so it's fine to have them commented out for now. But one thing to note is that the keys other thand `default` there (`resources` in this case) come from the `gatsby-source-filesystem` chunks of your `gatsby-config.js`. See [here](https://www.gatsbyjs.com/plugins/gatsby-plugin-mdx/#default-layouts) in the Gatsby docs for more info.
 
-## 🧐 What's inside?
+- if you restart the dev server (ctrl+C then `gatsby develop` again), you should be able to now see any mdx pages you have in `src/pages`. If you don't have one, create a quick one
+  ```
+  echo "# THIS IS MDX\nand that means we can include React components." > src/pages/mdx.mdx
+  ```
+  Then restart the dev server AGAIN and you should be able to see it at [localhost:8000/mdx](https://localhost:8000/mdx).
 
-A quick look at the top-level files and directories you'll see in a Gatsby project.
+### ADDING CONTENT FOLDERS AND TEST PAGES
 
-    .
-    ├── node_modules
-    ├── src
-    ├── .gitignore
-    ├── .prettierrc
-    ├── gatsby-browser.js
-    ├── gatsby-config.js
-    ├── gatsby-node.js
-    ├── gatsby-ssr.js
-    ├── LICENSE
-    ├── package-lock.json
-    ├── package.json
-    └── README.md
+Frequently we will want to have some markdown (and sometimes mdx) content outside of the `src/pages` folder. Here are some steps and simple scripts to get this set up.
 
-1.  **`/node_modules`**: This directory contains all of the modules of code that your project depends on (npm packages) are automatically installed.
+#### CREATE OR COPY CONTENT FOLDER
 
-2.  **`/src`**: This directory will contain all of the code related to what you will see on the front-end of your site (what you see in the browser) such as your site header or a page template. `src` is a convention for “source code”.
+- if you already have a content folder (like from yesterday's project, say), just copy it in, like so:
+  ```
+  cp -aR ../mk-gatsby-20210116/content content`
+  ```
+- if you need to create the folders, here is a script that makes the content directory and addes some images and a basic page
+  ```
+  mkdir content content/resources content/shows content/llmdx content/glossary
+  mv src/images content/images
+  curl -o content/images/gatsby.jpg "https://i.guim.co.uk/img/media/cc5ff87a032ce6e4144e63a2a1cbe476dbc7cd5a/273_0_3253_1952/master/3253.jpg?width=620&quality=45&auto=format&fit=max&dpr=2&s=d8da5fd430d3983dc50543a44b3979d4"
+  echo "# MDX RESOURCE\ncontent goes here\n\![Gatsby](../images/gatsby.jpg)" > content/resources/sample-resource.mdx
+  echo "# MDX PAGE\ncontent goes here\n\![Gatsby](../../content/images/gatsby.jpg)" > src/pages/sample-mdx-page.mdx
+  ```
+- if you do move the `src/images` folder and the images in there, don't forget to ensure that there's a correct path to the icon image referenced in the `gatsby-config.js` file (either a new icon or the one gatsby provided, which has been moved):
+  ```
+  icon: `content/images/gatsby-icon.png`,
+  ```
 
-3.  **`.gitignore`**: This file tells git which files it should not track / not maintain a version history for.
+#### ADDING TO GATSBY-CONFIG.JS
 
-4.  **`.prettierrc`**: This is a configuration file for [Prettier](https://prettier.io/). Prettier is a tool to help keep the formatting of your code consistent.
+- for each folder we add that contains a specific type of content that we want to NAME as a specific type of content (like if we want `posts` to be different from `documents` and receive a different default layout), we should add a reference to the `gatsby-source-filesystem` plugin that targets that particular folder. For the developing LL content folders, we're going with
+  ```
+  {
+    resolve: `gatsby-source-filesystem`,
+    options: {
+      name: `resources`,
+      path: `${__dirname}/content/resources`,
+    },
+  },
+  {
+    resolve: `gatsby-source-filesystem`,
+    options: {
+      name: `shows`,
+      path: `${__dirname}/content/shows`,
+    },
+  },
+  {
+    resolve: `gatsby-source-filesystem`,
+    options: {
+      name: `llmdx`,
+      path: `${__dirname}/content/llmdx`,
+    },
+  },
+  {
+    resolve: `gatsby-source-filesystem`,
+    options: {
+      name: `images`,
+      path: `${__dirname}/content/images`,
+    },
+  },
+  {
+    resolve: `gatsby-source-filesystem`,
+    options: {
+      name: `glossary`,
+      path: `${__dirname}/content/glossary`,
+    },
+  },
+  ```
+- once you do this, you SHOULD be able to see all of your md or mdx files using the GraphiQL tool at [http://localhost:8000/\_\_\_graphql](http://localhost:8000/___graphql). If you are doing this for the first time, it pays to poke around a bit at this stage, creating some queries that help you try out various options for `allMarkdownRemark` and/or `allMdx` queries.
+- one quick note: if you have copied in any MDX files that are importing from packages you haven't yet installed, you'll need to install them. For today's project
+  ```
+  npm i theme-ui react-compare-image
+  ```
 
-5.  **`gatsby-browser.js`**: This file is where Gatsby expects to find any usage of the [Gatsby browser APIs](https://www.gatsbyjs.com/docs/browser-apis/) (if any). These allow customization/extension of default Gatsby settings affecting the browser.
+## MDX ONLY
 
-6.  **`gatsby-config.js`**: This is the main configuration file for a Gatsby site. This is where you can specify information about your site (metadata) like the site title and description, which Gatsby plugins you’d like to include, etc. (Check out the [config docs](https://www.gatsbyjs.com/docs/gatsby-config/) for more detail).
+first create a slug for each node. Since we'll be grabbing mdx and md files from multiple sources (`resources`, `shows`, etc), we're going to hold on to that string and add it to the url. We do this in `gatsby-node.js` with something like
 
-7.  **`gatsby-node.js`**: This file is where Gatsby expects to find any usage of the [Gatsby Node APIs](https://www.gatsbyjs.com/docs/node-apis/) (if any). These allow customization/extension of default Gatsby settings affecting pieces of the site build process.
+```
+ const { createFilePath } = require(`gatsby-source-filesystem`)
 
-8.  **`gatsby-ssr.js`**: This file is where Gatsby expects to find any usage of the [Gatsby server-side rendering APIs](https://www.gatsbyjs.com/docs/ssr-apis/) (if any). These allow customization of default Gatsby settings affecting server-side rendering.
+ exports.onCreateNode = ({ node, getNode, actions }) => {
+     const { createNodeField } = actions
+     if (node.internal.type === `Mdx`) {
+         console.log(`found mdx node of type ${node.internal.type}`)
+         const fileNode = getNode(node.parent)
+         const slugStem = createFilePath({ node, getNode })
+         const slugRoot = fileNode.sourceInstanceName ? fileNode.sourceInstanceName : "content"
+         createNodeField({
+             node,
+             name: `slug`,
+             value: `/${slugRoot}${slugStem}`,
+         })
+       }
+   }
+```
 
-9.  **`LICENSE`**: This Gatsby starter is licensed under the 0BSD license. This means that you can see this file as a placeholder and replace it with your own license.
+You can now perform your `allMdx` query again in your [http://localhost:8000/\_\_\_graphql](http://localhost:8000/___graphql).
 
-10. **`package-lock.json`** (See `package.json` below, first). This is an automatically generated file based on the exact versions of your npm dependencies that were installed for your project. **(You won’t change this file directly).**
+- then create pages for each node.
+- create an initial test layout in `src/templates/test-layout.js` (note—this code is just to get us started—it will not work as is)
 
-11. **`package.json`**: A manifest file for Node.js projects, which includes things like metadata (the project’s name, author, etc). This manifest is how npm knows which packages to install for your project.
+  ```
+  import React from "react"
+  import Layout from "../components/layout"
 
-12. **`README.md`**: A text file containing useful reference information about your project.
+  export default function TestLayout() {
+    return (
+      <Layout>
+        <div>Hello resource layout</div>
+      </Layout>
+    )
+  }
+  ```
 
-## 🎓 Learning Gatsby
+- follow one of the docs (like [this on one creating mdx pages](https://www.gatsbyjs.com/docs/mdx/programmatically-creating-pages/)) to create some pages, or just something like
 
-Looking for more guidance? Full documentation for Gatsby lives [on the website](https://www.gatsbyjs.com/). Here are some places to start:
+  ```
+  exports.createPages = async ({ graphql, actions, reporter }) => {
+  const { createPage } = actions
+  const mdxResult = await graphql(`
+      query {
+      allMdx {
+          edges {
+          node {
+              id
+              frontmatter {
+              title
+              }
+              fields {
+              slug
+              title
+              pageType
+              }
+              headings(depth: h1) {
+              value
+              }
+          }
+          }
+      }
+      }
+  `)
 
-- **For most developers, we recommend starting with our [in-depth tutorial for creating a site with Gatsby](https://www.gatsbyjs.com/tutorial/).** It starts with zero assumptions about your level of ability and walks through every step of the process.
+  if (mdxResult.errors) {
+      reporter.panicOnBuild('🚨  ERROR: Loading "createPages" query')
+  }
 
-- **To dive straight into code samples, head [to our documentation](https://www.gatsbyjs.com/docs/).** In particular, check out the _Guides_, _API Reference_, and _Advanced Tutorials_ sections in the sidebar.
+  const mdx = mdxResult.data.allMdx.edges
+  mdx.forEach(({ node }, index) => {
+      console.log(`creating page for id ${node.id} with slug ${node.fields.slug} with initial h1 of ${node.headings[0].value}`)
+      createPage({
+      // This is the slug you created before
+      // (or `node.frontmatter.slug`)
+      path: node.fields.slug,
+      // This component will wrap our MDX content
+      component: path.resolve(`./src/components/templates/resource-template.js`),
+      // You can use the values in this context in
+      // our page layout component
+      context: { id: node.id },
+      })
+  })
+  }
+  ```
 
-## 💫 Deploy
+### ADD STYLES WITH THEME-UI
 
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/gatsbyjs/gatsby-starter-default)
+- install [gatsby-plugin-theme-ui](https://www.gatsbyjs.com/plugins/gatsby-plugin-theme-ui/?=theme-ui) . one option =
+  ```
+  npm i theme-ui gatsby-plugin-theme-ui @theme-ui/presets
+  ```
+- then add it to `gatsby-config.js`
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/gatsbyjs/gatsby-starter-default)
+  ```
+  plugins: ['gatsby-plugin-theme-ui'],
+  ```
 
-<!-- AUTO-GENERATED-CONTENT:END -->
+- make the shadow dir
+  ```
+  mkdir src/gatsby-plugin-theme-ui
+  ```
+  and add index
+  ```
+  echo "export default {}" > src/gatsby-plugin-theme-ui/index.js
+  ```
+- we then need to add some elements to the theme, for instance:
+
+  ```
+  import baseTheme from "@theme-ui/preset-funk"
+  import { merge } from "theme-ui"
+
+  export default merge(baseTheme, {
+      colors: {
+          text: "#999",
+          background: "#fff",
+          primary: "#639",
+          secondary: "#ff6347",
+          headerBackground: "rgba(0, 0, 20, .7)"
+        },
+      fontWeights: {
+          body: 400,
+          heading: 900,
+          bold: 700,
+      },
+      lineHeights: {
+          body: 1.5,
+          heading: 1.125,
+      },
+      fontSizes: [10, 14, 18, 24, 32, 48, 72, 96, 144],
+      styles: {
+          h1: {
+            fontFamily: "heading",
+            fontWeight: "heading",
+            lineHeight: "heading",
+            marginTop: 0,
+            marginBottom: 3,
+          //   fontSize: 2,
+          //   color: "red"
+          },
+          a: {
+            color: "primary",
+            ":hover, :focus": {
+              color: "secondary",
+            },
+          },
+        },
+  })
+  ```
+
+### ADD FONTS
+
+- npm install @fontsource/prompt
+  ```
+  npm install @fontsource/crimson-pro @fontsource/lato
+  ```
+
+* then add the import statements to your theme
+  ```
+  import '@fontsource/crimson-pro/500.css';
+  import '@fontsource/crimson-pro/400.css';
+  import '@fontsource/lato/400.css';
+  ```
+* then add these fonts and reference them in your styles
+
+  ```
+  fonts: {
+      body: "Crimson Pro, sans-serif",
+      heading: "Crimson Pro, serif",
+      monospace: "Menlo, monospace",
+  },
+  styles: {
+      h1: {
+      fontFamily: "heading",
+      // etc.
+      }
+  }
+  ```
+
+* Airtable
+* where templates go and why
