@@ -22,7 +22,7 @@ export default function PageTemplate({ data: { mdx } }) {
         padding: "1em"
       }}
     >
-      <Seo />
+      <Seo image={mdx.fields.mainImage} />
       <h1>{mdx.fields.title}</h1>
       <p>got your mdx right here</p>
       <pre>{JSON.stringify(mdx, replacer, 4)}</pre>
